@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redcon AI Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #343541;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background-color: #202123;
+            padding: 15px 20px;
+            border-bottom: 1px solid #4a4a4f;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #10a37f;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10a37f;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Messages Area */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .message.user {
+            background-color: #343541;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .message.assistant {
+            background-color: #444654;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .user .avatar {
+            background-color: #5436da;
+            color: white;
+        }
+
+        .assistant .avatar {
+            background-color: #10a37f;
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .message-content p {
+            margin-bottom: 10px;
+        }
+
+        .message-content pre {
+            background-color: #1e1e1e;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            border: 1px solid #333;
+        }
+
+        .message-content code {
+            background-color: #1e1e1e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background-color: #444654;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background-color: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 20px;
+            background-color: #343541;
+            border-top: 1px solid #4a4a4f;
+        }
+
+        .input-container {
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            background-color: #40414f;
+            border-radius: 12px;
+            border: 1px solid #565869;
+            padding: 12px;
+            gap: 12px;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #10a37f;
+        }
+
+        #messageInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 16px;
+            line-height: 1.5;
+            resize: none;
+            max-height: 200px;
+            min-height: 24px;
+            font-family: inherit;
+        }
+
+        #messageInput::placeholder {
+            color: #8e8ea0;
+        }
+
+        #sendButton {
+            background-color: #10a37f;
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+        }
+
+        #sendButton:hover:not(:disabled) {
+            background-color: #0d8f6f;
+        }
+
+        #sendButton:disabled {
+            background-color: #40414f;
+            cursor: not-allowed;
+        }
+
+        .send-icon {
+            width: 16px;
+            height: 16px;
+            fill: white;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .welcome-screen h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .welcome-screen p {
+            font-size: 16px;
+            color: #8e8ea0;
+            margin-bottom: 30px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .example-prompts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .example-prompt {
+            background-color: #444654;
+            padding: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-align: right;
+        }
+
+        .example-prompt:hover {
+            background-color: #565869;
+        }
+
+        .example-prompt h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .example-prompt p {
+            font-size: 12px;
+            color: #8e8ea0;
+            margin: 0;
+        }
+
+        /* Error Message */
+        .error-message {
+            background-color: #f56565;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        /* Scrollbar Styling */
+        .messages-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages-area::-webkit-scrollbar-track {
+            background: #343541;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb {
+            background: #565869;
+            border-radius: 3px;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: #6f6f7f;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .messages-area {
+                padding: 16px;
+            }
+
+            .input-area {
+                padding: 16px;
+            }
+
+            .message {
+                margin-bottom: 20px;
+            }
+
+            .welcome-screen {
+                padding: 20px;
+            }
+
+            .welcome-screen h2 {
+                font-size: 24px;
+            }
+
+            .example-prompts {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #444654;
+            border-radius: 50%;
+            border-top-color: #10a37f;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Redcon AI Chat</h1>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>متصل بـ n8n</span>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="messages-area" id="messagesArea">
+            <div class="welcome-screen" id="welcomeScreen">
+                <h2>مرحباً بك في Redcon AI</h2>
+                <p>أنا مساعد ذكي يعمل بتقنية الذكاء الاصطناعي. يمكنني مساعدتك في الإجابة على أسئلتك، وحل المشاكل، وتقديم الاقتراحات. ابدأ محادثة معي الآن!</p>
+                
+                <div class="example-prompts">
+                    <div class="example-prompt" onclick="useExample('اشرح لي مفهوم الذكاء الاصطناعي')">
+                        <h3>🧠 شرح المفاهيم</h3>
+                        <p>اشرح لي مفهوم الذكاء الاصطناعي</p>
+                    </div>
+                    <div class="example-prompt" onclick="useExample('ساعدني في كتابة كود Python')">
+                        <h3>💻 البرمجة</h3>
+                        <p>ساعدني في كتابة كود Python</p>
+                    </div>
+                    <div class="example-prompt" onclick="useExample('أريد خطة عمل لمشروع تقني')">
+                        <h3>📊 التخطيط</h3>
+                        <p>أريد خطة عمل لمشروع تقني</p>
+                    </div>
+                    <div class="example-prompt" onclick="useExample('ترجم هذا النص إلى الإنجليزية')">
+                        <h3>🌐 الترجمة</h3>
+                        <p>ترجم هذا النص إلى الإنجليزية</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="avatar">
+                    <span>AI</span>
+                </div>
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-container">
+                <div class="error-message" id="errorMessage"></div>
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="اكتب رسالتك هنا..."
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                        oninput="adjustTextareaHeight()"
+                    ></textarea>
+                    <button id="sendButton" onclick="sendMessage()" disabled>
+                        <svg class="send-icon" viewBox="0 0 24 24">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - قم بتعديل هذه القيم حسب إعداد n8n الخاص بك
+        const CONFIG = {
+            // استبدل هذا بـ URL الـ webhook الخاص بك في n8n
+            webhookUrl: 'http://130.61.217.190:5678/webhook/chat',
+            // أو إذا كان n8n يعمل على localhost
+            // webhookUrl: 'http://localhost:5678/webhook/chat',
+            maxRetries: 3,
+            retryDelay: 1000
+        };
+
+        let messageHistory = [];
+        let isProcessing = false;
+
+        // DOM Elements
+        const messagesArea = document.getElementById('messagesArea');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            messageInput.focus();
+            adjustTextareaHeight();
+        });
+
+        // Handle input changes
+        messageInput.addEventListener('input', function() {
+            const hasText = this.value.trim().length > 0;
+            sendButton.disabled = !hasText || isProcessing;
+            adjustTextareaHeight();
+        });
+
+        // Handle enter key
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                if (!sendButton.disabled) {
+                    sendMessage();
+                }
+            }
+        }
+
+        // Adjust textarea height
+        function adjustTextareaHeight() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
+        }
+
+        // Use example prompt
+        function useExample(text) {
+            messageInput.value = text;
+            messageInput.focus();
+            sendButton.disabled = false;
+            adjustTextareaHeight();
+        }
+
+        // Hide welcome screen
+        function hideWelcomeScreen() {
+            if (welcomeScreen) {
+                welcomeScreen.style.display = 'none';
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        // Add message to chat
+        function addMessage(content, isUser = false) {
+            hideWelcomeScreen();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            
+            messageDiv.innerHTML = `
+                <div class="avatar">
+                    <span>${isUser ? 'أنت' : 'AI'}</span>
+                </div>
+                <div class="message-content">
+                    ${isUser ? escapeHtml(content) : formatMessage(content)}
+                </div>
+            `;
+            
+            messagesArea.appendChild(messageDiv);
+            scrollToBottom();
+            
+            return messageDiv;
+        }
+
+        // Format AI message (support markdown-like formatting)
+        function formatMessage(content) {
+            if (!content) return '';
+            
+            // Convert newlines to paragraphs
+            let formatted = content.split('\n').map(line => {
+                if (line.trim() === '') return '';
+                return `<p>${escapeHtml(line)}</p>`;
+            }).join('');
+            
+            // Handle code blocks (```code```)
+            formatted = formatted.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            
+            // Handle inline code (`code`)
+            formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+            
+            // Handle bold (**text**)
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Handle italic (*text*)
+            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            return formatted || '<p>لم أتمكن من الحصول على رد مناسب.</p>';
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Show typing indicator
+        function showTyping() {
+            typingIndicator.style.display = 'flex';
+            scrollToBottom();
+        }
+
+        // Hide typing indicator
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            setTimeout(() => {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }, 100);
+        }
+
+        // Send message to n8n webhook
+        async function sendToWebhook(message, retryCount = 0) {
+            try {
+                const response = await fetch(CONFIG.webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        timestamp: new Date().toISOString(),
+                        sessionId: getSessionId(),
+                        history: messageHistory.slice(-5) // أرسل آخر 5 رسائل للسياق
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error sending to webhook:', error);
+                
+                if (retryCount < CONFIG.maxRetries) {
+                    console.log(`Retrying... (${retryCount + 1}/${CONFIG.maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, CONFIG.retryDelay));
+                    return sendToWebhook(message, retryCount + 1);
+                }
+                
+                throw error;
+            }
+        }
+
+        // Get or create session ID
+        function getSessionId() {
+            let sessionId = localStorage.getItem('redcon_chat_session');
+            if (!sessionId) {
+                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('redcon_chat_session', sessionId);
+            }
+            return sessionId;
+        }
+
+        // Main send message function
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || isProcessing) return;
+
+            isProcessing = true;
+            sendButton.disabled = true;
+            messageInput.disabled = true;
+
+            try {
+                // Add user message to chat
+                addMessage(message, true);
+                messageHistory.push({ role: 'user', content: message });
+
+                // Clear input
+                messageInput.value = '';
+                adjustTextareaHeight();
+
+                // Show typing indicator
+                showTyping();
+
+                // Send to n8n webhook
+                const response = await sendToWebhook(message);
+                
+                // Hide typing indicator
+                hideTyping();
+
+                // Handle response
+                let aiResponse = '';
+                if (response && typeof response === 'object') {
+                    // Try different possible response fields
+                    aiResponse = response.response || 
+                               response.message || 
+                               response.reply || 
+                               response.answer || 
+                               response.result || 
+                               response.data || 
+                               JSON.stringify(response);
+                } else if (typeof response === 'string') {
+                    aiResponse = response;
+                } else {
+                    aiResponse = 'تم استلام الرد بنجاح من النظام.';
+                }
+
+                // Add AI response to chat
+                addMessage(aiResponse, false);
+                messageHistory.push({ role: 'assistant', content: aiResponse });
+
+                // Keep only last 10 messages in history
+                if (messageHistory.length > 10) {
+                    messageHistory = messageHistory.slice(-10);
+                }
+
+            } catch (error) {
+                hideTyping();
+                console.error('Error:', error);
+                
+                let errorMsg = 'عذراً، حدث خطأ أثناء الاتصال بالخادم. ';
+                if (error.message.includes('Failed to fetch')) {
+                    errorMsg += 'تأكد من أن خدمة n8n تعمل على العنوان الصحيح.';
+                } else {
+                    errorMsg += 'يرجى المحاولة مرة أخرى لاحقاً.';
+                }
+                
+                addMessage(errorMsg, false);
+                showError('فشل في إرسال الرسالة. ' + error.message);
+            } finally {
+                isProcessing = false;
+                messageInput.disabled = false;
+                messageInput.focus();
+                
+                // Re-enable send button if there's text
+                const hasText = messageInput.value.trim().length > 0;
+                sendButton.disabled = !hasText;
+            }
+        }
+
+        // Add some helpful keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            // Ctrl/Cmd + K to clear chat
+            if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+                event.preventDefault();
+                clearChat();
+            }
+            
+            // Escape to focus input
+            if (event.key === 'Escape') {
+                messageInput.focus();
+            }
+        });
+
+        // Clear chat function
+        function clearChat() {
+            const messages = messagesArea.querySelectorAll('.message');
+            messages.forEach(msg => msg.remove());
+            welcomeScreen.style.display = 'flex';
+            messageHistory = [];
+            messageInput.focus();
+        }
+
+        // Auto-save and restore chat history (optional)
+        function saveChat() {
+            localStorage.setItem('redcon_chat_history', JSON.stringify(messageHistory));
+        }
+
+        function loadChat() {
+            const saved = localStorage.getItem('redcon_chat_history');
+            if (saved) {
+                try {
+                    messageHistory = JSON.parse(saved);
+                    if (messageHistory.length > 0) {
+                        hideWelcomeScreen();
+                        messageHistory.forEach(msg => {
+                            addMessage(msg.content, msg.role === 'user');
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading chat history:', error);
+                }
+            }
+        }
+
+        // Uncomment the next line if you want to restore chat history on page load
+        // loadChat();
+
+        // Save chat history when messages are added
+        const originalAddMessage = addMessage;
+        addMessage = function(content, isUser) {
+            const result = originalAddMessage(content, isUser);
+            saveChat();
+            return result;
+        };
+    </script>
+</body>
+</html>
